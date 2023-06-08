@@ -1,0 +1,318 @@
+#!/usr/bin/perl
+#
+use GD;
+use CGI qw(param);
+
+print <<EOstart;
+Content-type: text/html
+
+<head>
+<title>Brian McGehee Perl script test page</title>
+</head>
+<body bgcolor="#000000" text="#008000" link="#008000" vlink="#008000" alink="#008000">
+
+EOstart
+
+$temp = set_temp_map_vars ();
+$temp = make_map ();
+
+if (param()) {
+	$left=param("Left");
+	$right=param("Right");
+	$forward=param("Forward");
+#	print "<p>$left , $right\n";
+	@data=split(/,/,param("pp"));
+#	print "<p>@data\n";
+	$px=$data[0];
+	$py=$data[1];
+	$dx=$data[2];
+	$dy=$data[3];
+	if ($left =~ /^L/) {
+		$temp=change_dir("L");
+	} elsif ($right =~ /^R/) {
+		$temp=change_dir("R");
+	} elsif ($forward =~ /^F/) {
+		$px += $dx;
+		$py += $dy;
+		$temp = get_temp_map ();
+		if ($map[4][2] != 0) {
+			$px -= $dx;
+			$py -= $dy;
+		}
+	}
+	$temp = get_dirs();
+#	print "<p>$px,$py,$dx,$dy\n";
+#	print "<p>\n";
+}
+
+$temp = get_temp_map ();
+$temp = print_temp_map ();
+#$temp = draw_temp_map ();
+#sleep 2;
+	
+print '<p><center>';
+print "<img src=\"drawmap.pl\?r0=$row[0]\&r1=$row[1]\&r2=$row[2]\&r3=$row[3]\&r4=$row[4]\" width=\"300\" height=\"200\" alt=\"Dungeon map coming soon...\">";
+print "<p>\n";
+print "</center><p>\n";
+print "Thank you $ENV{'REMOTE_HOST'} \@ $ENV{'HTTP_HOST'}<p>\n";
+
+$save = "$px,$py,$dx,$dy";
+print <<EOmiddle;
+
+<form method="GET" action="/cgi-bin/dngn.pl">
+
+<input type="submit" value="Left" name="Left">
+<input type="submit" value="Forward" name="Forward">
+<input type="submit" value="Right" name="Right">
+<input type="hidden" name="pp" value=\"$save\">
+</form>
+
+EOmiddle
+
+print <<EOend2;
+
+</body>
+</html>
+
+EOend2
+
+sub set_temp_map_vars {
+	my ($cnt, $cnt1, $cnt2);
+	$xw = 300;
+	$yw = 200;
+	$mx = $xw/2;
+	$my = $yw/2;
+	$px = 1;
+	$py = 1;
+	$dx = 1;
+	$dy = 0;
+	$temp = get_dirs();
+}
+
+sub get_temp_map {
+	my ($cnt1, $cnt2, $tmp);
+	for $cnt1 (0..4) {
+		for $cnt2 (0..4) {
+			$tmpx = $px + ($cnt2 - 2) * $rx + (4 - $cnt1) * $dx;
+			$tmpy = $py + ($cnt2 - 2) * $ry + (4 - $cnt1) * $dy;
+			if ($tmpx <0 || $tmpy <0) {
+				$map[$cnt1][$cnt2]=1;
+			} else {
+				$map[$cnt1][$cnt2]=$mainmap[$tmpy][$tmpx];
+			}
+		}
+	}
+}
+
+
+sub make_map {
+	@mainmap = (
+	[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+	[1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1],
+	[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+	[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+	);
+}
+
+
+sub print_temp_map {
+	my ($cnt1, $cnt2);
+	print "<p>\n";
+	for $cnt1 (0..4) {
+		$row[$cnt1] = "";
+		for $cnt2 (0..4) {
+			$row[$cnt1] .= $map[$cnt1][$cnt2];
+			print "$map[$cnt1][$cnt2]";
+		}
+		print "<p>\n";
+	}
+	print "<p>\n";
+}
+
+
+sub draw_temp_map {
+	my ($cnt1, $cnt2, $im, $tmp, $h1, $v1, $oy, $temp, $poly);
+	$im = new GD::Image($xw,$yw);
+
+	$white = $im->colorAllocate(255,255,255);
+	$black = $im->colorAllocate(0,0,0);       
+	$red = $im->colorAllocate(255,0,0);      
+	$blue = $im->colorAllocate(0,0,255);
+	#$Gray[0]  = $im->colorAllocate( 52 , 40 , 38 ); #25
+	#$Gray[1]  = $im->colorAllocate( 65 , 56 , 57 ); #30
+
+	$Gray[0]  = $im->colorAllocate( 89 , 84 , 84 ); #40
+	$Gray[1]  = $im->colorAllocate( 130 , 128 , 126 ); #55
+	$Gray[2]  = $im->colorAllocate( 143 , 142 , 141 ); #60
+	$Gray[3]  = $im->colorAllocate( 199 , 199 , 197 ); #80
+	$Gray[4]  = $im->colorAllocate( 240 , 241 , 240 ); #95
+	
+	
+	$im->fill($mx,$my,$black);
+	if ($filledinfloor) {
+		for $cnt1 (1..4) {
+			for $cnt2 (0..4) {
+				$temp = get_xy ($cnt2, $cnt1);
+	                        $ox1=$x1; $oy1=$y1; $ox2=$x2; $oy2=$y2;
+	                        $temp = get_xy ($cnt2, $cnt1-1);
+				
+				$poly = new GD::Polygon;
+				$poly->addPt($ox1,$oy2);
+				$poly->addPt($ox2,$oy2);
+				$poly->addPt($x2,$y2);
+				$poly->addPt($x1,$y2);
+				$poly->addPt($ox1,$oy2);
+	
+				$im->filledPolygon($poly,$Gray[$cnt1]);
+				$im->polygon($poly,$black);
+	
+				$poly = new GD::Polygon;
+				$poly->addPt($ox1,$oy1);
+				$poly->addPt($ox2,$oy1);
+				$poly->addPt($x2,$y1);
+				$poly->addPt($x1,$y1);
+				$poly->addPt($ox1,$oy1);
+	
+				$im->filledPolygon($poly,$Gray[$cnt1]);
+				$im->polygon($poly,$black);
+			}
+		}
+	}
+			
+			
+	for $cnt1 (0..4) {
+		for $cnt2 (0..1) {
+			if ($map[$cnt1][$cnt2] > 0) {
+                                $temp = get_xy ($cnt2, $cnt1);
+                                $ox1=$x1; $oy1=$y1; $ox2=$x2; $oy2=$y2;
+                                $temp = get_xy ($cnt2, $cnt1-1);
+				$im->filledRectangle($x1,$y1,$x2,$y2,$white);
+
+				$poly = new GD::Polygon;
+				$poly->addPt($ox2,$oy1);
+				$poly->addPt($x2,$y1);
+				$poly->addPt($x2,$y2);
+				$poly->addPt($ox2,$oy2);
+				$poly->addPt($ox2,$oy1);
+
+				$im->filledPolygon($poly,$Gray[$cnt1]);
+
+                                $im->line($ox2,$oy1,$x2,$y1,$black);
+                                $im->line($x2,$y1,$x2,$y2,$black);
+                                $im->line($x2,$y2,$ox2,$oy2,$black);
+                                $im->filledRectangle($ox1,$oy1,$ox2,$oy2,$Gray[$cnt1]);
+                                $im->rectangle($ox1,$oy1,$ox2,$oy2,$black);
+			}
+                        $tmp = 4-$cnt2;
+			if ($map[$cnt1][$tmp] >0) {
+                                $temp = get_xy ($tmp, $cnt1);
+                                $ox1=$x1; $oy1=$y1; $ox2=$x2; $oy2=$y2;
+                                $temp = get_xy ($tmp, $cnt1-1);
+				$im->filledRectangle($x1,$y1,$x2,$y2,$white);
+
+				$poly = new GD::Polygon;
+				$poly->addPt($ox1,$oy1);
+				$poly->addPt($x1,$y1);
+				$poly->addPt($x1,$y2);
+				$poly->addPt($ox1,$oy2);
+				$poly->addPt($ox1,$oy1);
+
+				$im->filledPolygon($poly,$Gray[$cnt1]);
+				
+                                $im->line($ox1,$oy1,$x1,$y1,$black);
+                                $im->line($x1,$y1,$x1,$y2,$black);
+                                $im->line($x1,$y2,$ox1,$oy2,$black);
+                                $im->filledRectangle($ox1,$oy1,$ox2,$oy2,$Gray[$cnt1]);
+                                $im->rectangle($ox1,$oy1,$ox2,$oy2,$black);
+			}
+		}
+		if ($map[$cnt1][2] > 0) {
+			$temp = get_xy (2, $cnt1);
+			$im->filledRectangle($x1,$y1,$x2,$y2,$Gray[$cnt1]);
+			$im->rectangle($x1,$y1,$x2,$y2,$black);
+		}
+			
+	}
+	$time=time();
+	$giffilename = "dngn$time.gif";
+	
+	open (GIFILE, ">/home/httpd/html/test.gif") || print "<p>No gif file: $!<p>\n";
+	binmode GIFILE;
+	print GIFILE $im->gif;
+	close GIFILE || print "<p>Gif close fail: $!<p>\n";
+	`sync`;
+	sleep 1;
+}
+
+
+sub get_xy {
+        my ($tmp);
+        $tmp = (1 / 2 ** (4 - $_[1] ));
+        $wh = $yw * $tmp;
+	$ww = $xw * $tmp;
+        $y1 = $my - $wh / 2;
+        $y2 = $y1 + $wh;
+	$xl = $mx - (($ww * 5) /2);
+	$x1 = $xl + $_[0] * $ww;
+	$x2 = $x1 + $ww;
+}
+
+
+sub get_dirs {
+	if ($dx != 0) {
+		$rx=0;
+		$lx=0;
+		$ry=$dx;
+		$ly=-$dx;
+	} else {
+		$ry=0;
+		$ly=0;
+		$rx=-$dy;
+		$lx=$dy;
+	}
+}
+
+
+sub change_dir {
+	if ($dx != 0) {
+		if ($_[0] =~ /^R/) {
+			$dy = $dx;
+		} else {
+			$dy = -$dx;
+		}
+		$dx=0;
+	} else {
+		if ($_[0] =~ /^L/) {
+			$dx = $dy;
+		} else {
+			$dx = -$dy;
+		}
+		$dy=0;
+	}
+	$temp = get_dirs();
+}
